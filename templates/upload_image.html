@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Image</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}" class="main-page-btn">Main Page</a>
+    </nav>
+    <h1 id="title">이미지 업로드</h1>
+    <div class="container">
+        <div id="image-drop-area" class="upload-area">
+            <p id="dragDropTextImage">여기에 이미지 파일을 드롭하세요</p>
+            <p>or</p>
+            <p>Click to select a file</p>
+        </div>
+    </div>
+    <div class="container">
+        <form id="uploadImageForm" action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" id="image_file" name="image" accept="image/*" style="display: none;">
+            <input type="text" id="watermarkTextPlaceholder" name="text" placeholder="Watermark Text">
+            <input type="submit" id="submit" value="Upload">
+        </form>
+    </div>
+    <section class="result-section" id="result"></section>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
