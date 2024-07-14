@@ -19,13 +19,14 @@
         </div>
     </div>
     <div class="container">
-        <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <form id="uploadVideoForm" action="/upload" method="post" enctype="multipart/form-data">
             <input type="file" id="video_file" name="video" accept="video/*" style="display: none;">
             <input type="text" id="watermarkTextPlaceholder" name="text" placeholder="Watermark Text">
             <input type="submit" id="submit" value="Upload">
         </form>
     </div>
     <section class="result-section" id="result"></section>
+    <section class="detect-section" id="detect"></section> <!-- 탐지 결과 섹션 추가 -->
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>
