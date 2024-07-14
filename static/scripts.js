@@ -148,28 +148,90 @@ document.addEventListener('DOMContentLoaded', function() {
             resultSection.appendChild(originalLink);
         }
 
-        if (data.watermarked_url) {
-            var watermarkedHeading = document.createElement('h2');
-            watermarkedHeading.textContent = 'Watermarked File';
-            resultSection.appendChild(watermarkedHeading);
+        if (data.forensic_watermarked_url) {
+            var forensicWatermarkedHeading = document.createElement('h2');
+            forensicWatermarkedHeading.textContent = 'Forensic Watermarked File';
+            resultSection.appendChild(forensicWatermarkedHeading);
 
-            if (data.watermarked_url.endsWith('png') || data.watermarked_url.endsWith('jpg') || data.watermarked_url.endsWith('jpeg')) {
-                var watermarkedImg = document.createElement('img');
-                watermarkedImg.src = `/results/${data.watermarked_url}`;
-                watermarkedImg.alt = 'Watermarked Image';
-                resultSection.appendChild(watermarkedImg);
+            if (data.forensic_watermarked_url.endsWith('png') || data.forensic_watermarked_url.endsWith('jpg') || data.forensic_watermarked_url.endsWith('jpeg')) {
+                var forensicWatermarkedImg = document.createElement('img');
+                forensicWatermarkedImg.src = `/detects/${data.forensic_watermarked_url}`;
+                forensicWatermarkedImg.alt = 'Forensic Watermarked Image';
+                resultSection.appendChild(forensicWatermarkedImg);
             } else {
-                var watermarkedVideo = document.createElement('video');
-                watermarkedVideo.src = `/results/${data.watermarked_url}`;
-                watermarkedVideo.controls = true;
-                resultSection.appendChild(watermarkedVideo);
+                var forensicWatermarkedVideo = document.createElement('video');
+                forensicWatermarkedVideo.src = `/detects/${data.forensic_watermarked_url}`;
+                forensicWatermarkedVideo.controls = true;
+                resultSection.appendChild(forensicWatermarkedVideo);
             }
 
-            var watermarkedLink = document.createElement('a');
-            watermarkedLink.href = `/results/${data.watermarked_url}`;
-            watermarkedLink.textContent = 'Download Watermarked';
-            watermarkedLink.download = true;
-            resultSection.appendChild(watermarkedLink);
+            var forensicWatermarkedLink = document.createElement('a');
+            forensicWatermarkedLink.href = `/detects/${data.forensic_watermarked_url}`;
+            forensicWatermarkedLink.textContent = 'Download Forensic Watermarked';
+            forensicWatermarkedLink.download = true;
+            resultSection.appendChild(forensicWatermarkedLink);
+        }
+
+        if (data.forensic_highlight_url) {
+            var forensicHighlightHeading = document.createElement('h2');
+            forensicHighlightHeading.textContent = 'Forensic Highlight File';
+            resultSection.appendChild(forensicHighlightHeading);
+
+            if (data.forensic_highlight_url.endsWith('png') || data.forensic_highlight_url.endsWith('jpg') || data.forensic_highlight_url.endsWith('jpeg')) {
+                var forensicHighlightImg = document.createElement('img');
+                forensicHighlightImg.src = `/detects/${data.forensic_highlight_url}`;
+                forensicHighlightImg.alt = 'Forensic Highlight Image';
+                resultSection.appendChild(forensicHighlightImg);
+            } else {
+                var forensicHighlightVideo = document.createElement('video');
+                forensicHighlightVideo.src = `/detects/${data.forensic_highlight_url}`;
+                forensicHighlightVideo.controls = true;
+                resultSection.appendChild(forensicHighlightVideo);
+            }
+
+            var forensicHighlightLink = document.createElement('a');
+            forensicHighlightLink.href = `/detects/${data.forensic_highlight_url}`;
+            forensicHighlightLink.textContent = 'Download Forensic Highlight';
+            forensicHighlightLink.download = true;
+            resultSection.appendChild(forensicHighlightLink);
+        }
+
+        if (data.extracted_url) {
+            var extractedHeading = document.createElement('h2');
+            extractedHeading.textContent = 'Extracted Watermark File';
+            resultSection.appendChild(extractedHeading);
+
+            if (data.extracted_url.endsWith('png') || data.extracted_url.endsWith('jpg') || data.extracted_url.endsWith('jpeg')) {
+                var extractedImg = document.createElement('img');
+                extractedImg.src = `/extracts/${data.extracted_url}`;
+                extractedImg.alt = 'Extracted Watermark Image';
+                resultSection.appendChild(extractedImg);
+            } else {
+                var extractedVideo = document.createElement('video');
+                extractedVideo.src = `/extracts/${data.extracted_url}`;
+                extractedVideo.controls = true;
+                resultSection.appendChild(extractedVideo);
+            }
+
+            var extractedLink = document.createElement('a');
+            extractedLink.href = `/extracts/${data.extracted_url}`;
+            extractedLink.textContent = 'Download Extracted Watermark';
+            extractedLink.download = true;
+            resultSection.appendChild(extractedLink);
+        }
+
+        if (data.watermark_positions) {
+            var positionsHeading = document.createElement('h2');
+            positionsHeading.textContent = 'Watermark Positions';
+            resultSection.appendChild(positionsHeading);
+
+            var positionsList = document.createElement('ul');
+            data.watermark_positions.forEach(position => {
+                var positionItem = document.createElement('li');
+                positionItem.textContent = `x: ${position[0]}, y: ${position[1]}, width: ${position[2]}, height: ${position[3]}`;
+                positionsList.appendChild(positionItem);
+            });
+            resultSection.appendChild(positionsList);
         }
     }
 });
