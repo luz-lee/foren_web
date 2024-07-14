@@ -1,8 +1,7 @@
 import numpy as np
 import cv2
 import random
-from multiprocessing import Pool, cpu_count
-from moviepy.editor import VideoFileClip
+from concurrent.futures import ThreadPoolExecutor
 import os
 
 # 공통 유틸리티 함수
@@ -49,44 +48,107 @@ def apply_watermark(img, text_or_image_path, alpha=5, use_image=False):
     
     return result
 
+def extract_watermark(img_ori, img_input, alpha=5):
+    height, width = img_ori.shape[:2]
+    
+    img_input = resize_image(img_input, (height, width))
+    
+    img_ori_f = np.fft.fft2(img_ori)
+    img_input_f = np.fft.fft2(img_input)
+    
+    watermark = (img_input_f - img_ori_f) / alpha
+    watermark = np.real(watermark).astype(np.uint8)
+    
+    y_random_indices, x_random_indices = list(range(height)), list(range(width))
+    random.seed(2021)
+    random.shuffle(x_random_indices)
+    random.shuffle(y_random_indices)
+    
+    result2 = np.zeros(watermark.shape, dtype=np.uint8)
+    
+    for y in range(height):
+        for x in range(width):
+            result2[y, x] = watermark[y_random_indices[y], x_random_indices[x]]
+    
+    return watermark, result2
+
 # 비디오 워터마크 함수
-def process_frame(frame_data):
-    frame, text_or_image_path, use_image = frame_data
-    result = apply_watermark(frame, text_or_image_path, use_image=use_image)
-    return result
-
-def process_video(input_path, output_path, text_or_image_path, frame_skip=1, use_image=False):
+def process_video(input_path, output_path, process_function, *args, frame_skip=1):
     try:
-        clip = VideoFileClip(input_path)
-        fps = clip.fps
+        cap = cv2.VideoCapture(input_path)
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
-        frame_data_list = []
-        for frame in clip.iter_frames():
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  # Convert to BGR format for OpenCV
-            frame_data_list.append((frame, text_or_image_path, use_image))
+        frame_idx = 0
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-        with Pool(cpu_count()) as pool:
-            watermarked_frames = pool.map(process_frame, frame_data_list)
+                if frame_idx % frame_skip == 0:
+                    futures.append(executor.submit(process_function, frame, *args))
+                frame_idx += 1
 
-        # Create a new video clip with watermarked frames and original audio
-        watermarked_clip = VideoFileClip(
-            input_path,
-            has_mask=False
-        ).set_duration(clip.duration)
+            for future in futures:
+                processed_frame = future.result()
+                out.write(processed_frame)
 
-        def make_frame(t):
-            frame_idx = int(t * fps)
-            if frame_idx < len(watermarked_frames):
-                return cv2.cvtColor(watermarked_frames[frame_idx], cv2.COLOR_BGR2RGB)  # Convert back to RGB format
-            else:
-                return cv2.cvtColor(watermarked_frames[-1], cv2.COLOR_BGR2RGB)  # Convert back to RGB format
-
-        watermarked_clip = watermarked_clip.set_make_frame(make_frame)
-        watermarked_clip = watermarked_clip.set_audio(clip.audio)
-        watermarked_clip.write_videofile(output_path, codec='libx264', fps=fps)
-
+        cap.release()
+        out.release()
     except Exception as e:
         print(f"Error processing video: {e}")
 
 def apply_watermark_to_video(input_path, output_path, text_or_image_path, frame_skip=1, use_image=False):
-    process_video(input_path, output_path, text_or_image_path, frame_skip, use_image)
+    process_video(input_path, output_path, apply_watermark, text_or_image_path, frame_skip, use_image)
+
+def extract_frame_watermark(frame, watermarked_frame, alpha=5):
+    _, extracted_frame = extract_watermark(frame, watermarked_frame, alpha)
+    return extracted_frame
+
+def extract_watermark_from_video(input_path, watermarked_path, output_path, alpha=5, frame_skip=1):
+    try:
+        cap = cv2.VideoCapture(watermarked_path)
+        watermarked_frames = []
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            watermarked_frames.append(frame)
+        cap.release()
+
+        cap = cv2.VideoCapture(input_path)
+        frame_list = []
+        frame_idx = 0
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
+                if frame_idx % frame_skip == 0:
+                    watermarked_frame = watermarked_frames[frame_idx]
+                    futures.append(executor.submit(extract_frame_watermark, frame, watermarked_frame, alpha))
+                frame_idx += 1
+
+            for future in futures:
+                processed_frame = future.result()
+                frame_list.append(processed_frame)
+
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        
+        for frame in frame_list:
+            out.write(frame)
+
+        out.release()
+    except Exception as e:
+        print(f"Error extracting watermark: {e}")
