@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    var videoForm = document.getElementById('uploadForm');
+    var videoForm = document.getElementById('uploadVideoForm');
     if (videoForm) {
         videoForm.addEventListener('submit', function(event) {
             event.preventDefault();
@@ -131,69 +131,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.original_url.endsWith('png') || data.original_url.endsWith('jpg') || data.original_url.endsWith('jpeg')) {
                 var originalImg = document.createElement('img');
-                originalImg.src = `/uploads/${data.original_url}`;
+                originalImg.src = data.original_url;
                 originalImg.alt = 'Original Image';
                 resultSection.appendChild(originalImg);
             } else {
                 var originalVideo = document.createElement('video');
-                originalVideo.src = `/uploads/${data.original_url}`;
+                originalVideo.src = data.original_url;
                 originalVideo.controls = true;
                 resultSection.appendChild(originalVideo);
             }
 
             var originalLink = document.createElement('a');
-            originalLink.href = `/uploads/${data.original_url}`;
+            originalLink.href = data.original_url;
             originalLink.textContent = 'Download Original';
             originalLink.download = true;
             resultSection.appendChild(originalLink);
         }
 
-        if (data.forensic_watermarked_url) {
-            var forensicWatermarkedHeading = document.createElement('h2');
-            forensicWatermarkedHeading.textContent = 'Forensic Watermarked File';
-            resultSection.appendChild(forensicWatermarkedHeading);
+        if (data.watermarked_url) {
+            var watermarkedHeading = document.createElement('h2');
+            watermarkedHeading.textContent = 'Watermarked File';
+            resultSection.appendChild(watermarkedHeading);
 
-            if (data.forensic_watermarked_url.endsWith('png') || data.forensic_watermarked_url.endsWith('jpg') || data.forensic_watermarked_url.endsWith('jpeg')) {
-                var forensicWatermarkedImg = document.createElement('img');
-                forensicWatermarkedImg.src = `/detects/${data.forensic_watermarked_url}`;
-                forensicWatermarkedImg.alt = 'Forensic Watermarked Image';
-                resultSection.appendChild(forensicWatermarkedImg);
+            if (data.watermarked_url.endsWith('png') || data.watermarked_url.endsWith('jpg') || data.watermarked_url.endsWith('jpeg')) {
+                var watermarkedImg = document.createElement('img');
+                watermarkedImg.src = data.watermarked_url;
+                watermarkedImg.alt = 'Watermarked Image';
+                resultSection.appendChild(watermarkedImg);
             } else {
-                var forensicWatermarkedVideo = document.createElement('video');
-                forensicWatermarkedVideo.src = `/detects/${data.forensic_watermarked_url}`;
-                forensicWatermarkedVideo.controls = true;
-                resultSection.appendChild(forensicWatermarkedVideo);
+                var watermarkedVideo = document.createElement('video');
+                watermarkedVideo.src = data.watermarked_url;
+                watermarkedVideo.controls = true;
+                resultSection.appendChild(watermarkedVideo);
             }
 
-            var forensicWatermarkedLink = document.createElement('a');
-            forensicWatermarkedLink.href = `/detects/${data.forensic_watermarked_url}`;
-            forensicWatermarkedLink.textContent = 'Download Forensic Watermarked';
-            forensicWatermarkedLink.download = true;
-            resultSection.appendChild(forensicWatermarkedLink);
+            var watermarkedLink = document.createElement('a');
+            watermarkedLink.href = data.watermarked_url;
+            watermarkedLink.textContent = 'Download Watermarked';
+            watermarkedLink.download = true;
+            resultSection.appendChild(watermarkedLink);
         }
 
-        if (data.forensic_highlight_url) {
-            var forensicHighlightHeading = document.createElement('h2');
-            forensicHighlightHeading.textContent = 'Forensic Highlight File';
-            resultSection.appendChild(forensicHighlightHeading);
+        if (data.highlighted_url) {
+            var highlightedHeading = document.createElement('h2');
+            highlightedHeading.textContent = 'Highlighted Watermark File';
+            resultSection.appendChild(highlightedHeading);
 
-            if (data.forensic_highlight_url.endsWith('png') || data.forensic_highlight_url.endsWith('jpg') || data.forensic_highlight_url.endsWith('jpeg')) {
-                var forensicHighlightImg = document.createElement('img');
-                forensicHighlightImg.src = `/detects/${data.forensic_highlight_url}`;
-                forensicHighlightImg.alt = 'Forensic Highlight Image';
-                resultSection.appendChild(forensicHighlightImg);
+            if (data.highlighted_url.endsWith('png') || data.highlighted_url.endsWith('jpg') || data.highlighted_url.endsWith('jpeg')) {
+                var highlightedImg = document.createElement('img');
+                highlightedImg.src = data.highlighted_url;
+                highlightedImg.alt = 'Highlighted Watermark Image';
+                resultSection.appendChild(highlightedImg);
             } else {
-                var forensicHighlightVideo = document.createElement('video');
-                forensicHighlightVideo.src = `/detects/${data.forensic_highlight_url}`;
-                forensicHighlightVideo.controls = true;
-                resultSection.appendChild(forensicHighlightVideo);
+                var highlightedVideo = document.createElement('video');
+                highlightedVideo.src = data.highlighted_url;
+                highlightedVideo.controls = true;
+                resultSection.appendChild(highlightedVideo);
             }
 
-            var forensicHighlightLink = document.createElement('a');
-            forensicHighlightLink.href = `/detects/${data.forensic_highlight_url}`;
-            forensicHighlightLink.textContent = 'Download Forensic Highlight';
-            forensicHighlightLink.download = true;
-            resultSection.appendChild(forensicHighlightLink);
+            var highlightedLink = document.createElement('a');
+            highlightedLink.href = data.highlighted_url;
+            highlightedLink.textContent = 'Download Highlighted';
+            highlightedLink.download = true;
+            resultSection.appendChild(highlightedLink);
         }
 
         if (data.extracted_url) {
@@ -203,18 +203,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.extracted_url.endsWith('png') || data.extracted_url.endsWith('jpg') || data.extracted_url.endsWith('jpeg')) {
                 var extractedImg = document.createElement('img');
-                extractedImg.src = `/extracts/${data.extracted_url}`;
+                extractedImg.src = data.extracted_url;
                 extractedImg.alt = 'Extracted Watermark Image';
                 resultSection.appendChild(extractedImg);
             } else {
                 var extractedVideo = document.createElement('video');
-                extractedVideo.src = `/extracts/${data.extracted_url}`;
+                extractedVideo.src = data.extracted_url;
                 extractedVideo.controls = true;
                 resultSection.appendChild(extractedVideo);
             }
 
             var extractedLink = document.createElement('a');
-            extractedLink.href = `/extracts/${data.extracted_url}`;
+            extractedLink.href = data.extracted_url;
             extractedLink.textContent = 'Download Extracted Watermark';
             extractedLink.download = true;
             resultSection.appendChild(extractedLink);
