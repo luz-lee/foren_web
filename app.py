@@ -1,9 +1,10 @@
-from flask import Flask, request, send_from_directory, jsonify, render_template
+from flask import Flask, request, send_from_directory, jsonify, render_template, url_for
 from werkzeug.utils import secure_filename
 import os
 import cv2
-from utils import apply_watermark, extract_watermark, apply_watermark_to_video, extract_watermark_from_video
-from watermark_detector import add_and_detect_watermark, add_forensic_watermark
+from image import apply_watermark, extract_watermark
+from video import apply_watermark_to_video, extract_watermark_from_video
+from watermark_detector import add_and_detect_watermark
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -23,7 +24,7 @@ def upload_file():
     watermark_image = request.files.get('watermark_image')
     use_image = False
 
-    if video_file:
+    if video_file and text:
         filename = secure_filename(video_file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         video_file.save(input_path)
@@ -36,25 +37,18 @@ def upload_file():
         watermarked_filename = 'watermarked_' + filename
         watermarked_path = os.path.join(app.config['RESULT_FOLDER'], watermarked_filename)
         apply_watermark_to_video(input_path, watermarked_path, watermark_image_path, frame_skip=2, use_image=use_image)
-        extracted_filename = 'extracted_' + filename
-        extracted_path = os.path.join(app.config['EXTRACT_FOLDER'], extracted_filename)
-        extract_watermark_from_video(input_path, watermarked_path, extracted_path, frame_skip=2)
 
-        forensic_watermarked_path, forensic_highlight_path, watermark_positions = add_forensic_watermark(input_path, text)
-        forensic_watermarked_filename = 'forensic_watermarked_' + filename
-        forensic_highlight_filename = 'forensic_highlighted_' + filename
-        final_forensic_watermarked_path = os.path.join(app.config['DETECT_FOLDER'], forensic_watermarked_filename)
-        final_forensic_highlight_path = os.path.join(app.config['DETECT_FOLDER'], forensic_highlight_filename)
-        os.rename(forensic_watermarked_path, final_forensic_watermarked_path)
-        os.rename(forensic_highlight_path, final_forensic_highlight_path)
+        highlighted_filename = 'highlighted_' + filename
+        highlighted_path = os.path.join(app.config['DETECT_FOLDER'], highlighted_filename)
+        create_highlighted_video(watermarked_path, highlighted_path, text, positions)
 
-        return jsonify({
-            'original_url': filename,
-            'extracted_url': extracted_filename,
-            'forensic_watermarked_url': forensic_watermarked_filename,
-            'forensic_highlight_url': forensic_highlight_filename,
-            'watermark_positions': watermark_positions
-        })
+        response = {
+            'original_url': url_for('uploaded_file', filename=filename),
+            'watermarked_url': url_for('result_file', filename=watermarked_filename),
+            'highlighted_url': url_for('detect_file', filename=highlighted_filename)
+        }
+        return jsonify(response)
+
     elif image_file and text:
         filename = secure_filename(image_file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -77,13 +71,15 @@ def upload_file():
         cv2.imwrite(forensic_watermarked_path, non_visible_watermarked_img)
         cv2.imwrite(forensic_highlighted_path, highlighted_img)
 
-        return jsonify({
-            'original_url': filename,
-            'extracted_url': extracted_filename,
-            'forensic_watermarked_url': forensic_watermarked_filename,
-            'forensic_highlight_url': forensic_highlighted_filename,
+        response = {
+            'original_url': url_for('uploaded_file', filename=filename),
+            'watermarked_url': url_for('result_file', filename=watermarked_filename),
+            'highlighted_url': url_for('detect_file', filename=forensic_highlighted_filename),
+            'extracted_url': url_for('extract_file', filename=extracted_filename),
             'watermark_positions': watermark_positions
-        })
+        }
+        return jsonify(response)
+
     return 'Invalid request', 400
 
 @app.route('/upload_image')
