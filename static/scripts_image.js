@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (imageForm) {
         imageForm.addEventListener('submit', function(event) {
             event.preventDefault();
-            document.getElementById('loading').style.display = 'block';
+
             var formData = new FormData(this);
             fetch('/upload', {
                 method: 'POST',
@@ -65,11 +65,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 displayResults(data);
-                document.getElementById('loading').style.display = 'none';
             })
             .catch(error => {
                 console.error('Error:', error);
-                document.getElementById('loading').style.display = 'none';
             });
         });
     }
@@ -127,37 +125,6 @@ document.addEventListener('DOMContentLoaded', function() {
             forensicHighlightLink.textContent = 'Download Forensic Highlight';
             forensicHighlightLink.download = true;
             resultSection.appendChild(forensicHighlightLink);
-        }
-
-        if (data.extracted_url) {
-            var extractedHeading = document.createElement('h2');
-            extractedHeading.textContent = 'Extracted Watermark File';
-            resultSection.appendChild(extractedHeading);
-
-            var extractedImg = document.createElement('img');
-            extractedImg.src = data.extracted_url;
-            extractedImg.alt = 'Extracted Watermark Image';
-            resultSection.appendChild(extractedImg);
-
-            var extractedLink = document.createElement('a');
-            extractedLink.href = data.extracted_url;
-            extractedLink.textContent = 'Download Extracted Watermark';
-            extractedLink.download = true;
-            resultSection.appendChild(extractedLink);
-        }
-
-        if (data.watermark_positions) {
-            var positionsHeading = document.createElement('h2');
-            positionsHeading.textContent = 'Watermark Positions';
-            resultSection.appendChild(positionsHeading);
-
-            var positionsList = document.createElement('ul');
-            data.watermark_positions.forEach(position => {
-                var positionItem = document.createElement('li');
-                positionItem.textContent = `x: ${position[0]}, y: ${position[1]}, width: ${position[2]}, height: ${position[3]}`;
-                positionsList.appendChild(positionItem);
-            });
-            resultSection.appendChild(positionsList);
         }
     }
 });
