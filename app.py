@@ -1,15 +1,14 @@
-from flask import Flask, request, send_from_directory, jsonify, render_template, url_for
+from flask import Flask, request, send_from_directory, jsonify, render_template
 from werkzeug.utils import secure_filename
 import os
 import cv2
-from image import apply_watermark, extract_watermark
-from video import apply_watermark_to_video, extract_watermark_from_video
-from watermark_detector import add_and_detect_watermark
+from image import apply_watermark, extract_watermark, add_and_detect_watermark
+from video import apply_watermark_to_video, create_highlighted_video
+from watermark_detector import add_forensic_watermark
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['RESULT_FOLDER'] = 'results'
-app.config['EXTRACT_FOLDER'] = 'extracts'
 app.config['DETECT_FOLDER'] = 'detects'
 
 @app.route('/')
@@ -24,7 +23,7 @@ def upload_file():
     watermark_image = request.files.get('watermark_image')
     use_image = False
 
-    if video_file and text:
+    if video_file:
         filename = secure_filename(video_file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         video_file.save(input_path)
@@ -34,21 +33,25 @@ def upload_file():
             watermark_image_path = os.path.join(app.config['UPLOAD_FOLDER'], watermark_filename)
             watermark_image.save(watermark_image_path)
             use_image = True
+
         watermarked_filename = 'watermarked_' + filename
         watermarked_path = os.path.join(app.config['RESULT_FOLDER'], watermarked_filename)
         apply_watermark_to_video(input_path, watermarked_path, watermark_image_path, frame_skip=2, use_image=use_image)
 
-        highlighted_filename = 'highlighted_' + filename
-        highlighted_path = os.path.join(app.config['DETECT_FOLDER'], highlighted_filename)
-        create_highlighted_video(watermarked_path, highlighted_path, text, positions)
+        forensic_watermarked_path, forensic_highlight_path, watermark_positions = add_forensic_watermark(input_path, text)
+        forensic_watermarked_filename = 'forensic_watermarked_' + filename
+        forensic_highlight_filename = 'forensic_highlighted_' + filename
+        final_forensic_watermarked_path = os.path.join(app.config['DETECT_FOLDER'], forensic_watermarked_filename)
+        final_forensic_highlight_path = os.path.join(app.config['DETECT_FOLDER'], forensic_highlight_filename)
+        os.rename(forensic_watermarked_path, final_forensic_watermarked_path)
+        os.rename(forensic_highlight_path, final_forensic_highlight_path)
 
-        response = {
-            'original_url': url_for('uploaded_file', filename=filename),
-            'watermarked_url': url_for('result_file', filename=watermarked_filename),
-            'highlighted_url': url_for('detect_file', filename=highlighted_filename)
-        }
-        return jsonify(response)
-
+        return jsonify({
+            'original_url': os.path.join('/uploads', filename),
+            'forensic_watermarked_url': os.path.join('/detects', forensic_watermarked_filename),
+            'forensic_highlight_url': os.path.join('/detects', forensic_highlight_filename),
+            'watermark_positions': watermark_positions
+        })
     elif image_file and text:
         filename = secure_filename(image_file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -59,7 +62,7 @@ def upload_file():
         watermarked_path = os.path.join(app.config['RESULT_FOLDER'], watermarked_filename)
         cv2.imwrite(watermarked_path, watermarked_img)
         extracted_filename = 'extracted_' + filename
-        extracted_path = os.path.join(app.config['EXTRACT_FOLDER'], extracted_filename)
+        extracted_path = os.path.join(app.config['RESULT_FOLDER'], extracted_filename)
         watermark, result2 = extract_watermark(img, watermarked_img)
         cv2.imwrite(extracted_path, result2)
 
@@ -71,15 +74,13 @@ def upload_file():
         cv2.imwrite(forensic_watermarked_path, non_visible_watermarked_img)
         cv2.imwrite(forensic_highlighted_path, highlighted_img)
 
-        response = {
-            'original_url': url_for('uploaded_file', filename=filename),
-            'watermarked_url': url_for('result_file', filename=watermarked_filename),
-            'highlighted_url': url_for('detect_file', filename=forensic_highlighted_filename),
-            'extracted_url': url_for('extract_file', filename=extracted_filename),
+        return jsonify({
+            'original_url': os.path.join('/uploads', filename),
+            'extracted_url': os.path.join('/results', extracted_filename),
+            'forensic_watermarked_url': os.path.join('/detects', forensic_watermarked_filename),
+            'forensic_highlight_url': os.path.join('/detects', forensic_highlighted_filename),
             'watermark_positions': watermark_positions
-        }
-        return jsonify(response)
-
+        })
     return 'Invalid request', 400
 
 @app.route('/upload_image')
@@ -98,10 +99,6 @@ def uploaded_file(filename):
 def result_file(filename):
     return send_from_directory(app.config['RESULT_FOLDER'], filename)
 
-@app.route('/extracts/<filename>')
-def extract_file(filename):
-    return send_from_directory(app.config['EXTRACT_FOLDER'], filename)
-
 @app.route('/detects/<filename>')
 def detect_file(filename):
     return send_from_directory(app.config['DETECT_FOLDER'], filename)
@@ -111,8 +108,6 @@ if __name__ == '__main__':
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['RESULT_FOLDER']):
         os.makedirs(app.config['RESULT_FOLDER'])
-    if not os.path.exists(app.config['EXTRACT_FOLDER']):
-        os.makedirs(app.config['EXTRACT_FOLDER'])
     if not os.path.exists(app.config['DETECT_FOLDER']):
         os.makedirs(app.config['DETECT_FOLDER'])
     app.run(host='0.0.0.0', port=5000, debug=True)
