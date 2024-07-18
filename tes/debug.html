@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디버깅 페이지</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}">홈</a> | <a href="{{ url_for('debug') }}">디버깅 페이지</a>
+    </nav>
+    <h1>디버깅 페이지</h1>
+    <h2>업로드된 파일</h2>
+    <ul>
+        {% for file in upload_files %}
+        <li>{{ file }}</li>
+        {% endfor %}
+    </ul>
+    <h2>워터마크 추가 파일</h2>
+    <ul>
+        {% for file in result_files %}
+        <li>{{ file }}
+            <form action="{{ url_for('extract_watermark_from_file') }}" method="post" style="display: inline;">
+                <input type="hidden" name="filename" value="{{ file }}">
+                <button type="submit">Extract Watermark</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    <h2>탐지된 워터마크 파일</h2>
+    <ul>
+        {% for file in detect_files %}
+        <li>{{ file }}</li>
+        {% endfor %}
+    </ul>
+    <h2>미리보기 파일</h2>
+    <ul>
+        {% for file in preview_files %}
+        <li>{{ file }}</li>
+        {% endfor %}
+    </ul>
+    <section class="result-section" id="extract_result"></section>
+    <script>
+        document.querySelectorAll('form[action="{{ url_for('extract_watermark_from_file') }}"]').forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                fetch(this.action, {
+                    method: this.method,
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultSection = document.getElementById('extract_result');
+                    resultSection.innerHTML = '';
+                    if (data.extracted_url) {
+                        const heading = document.createElement('h2');
+                        heading.textContent = 'Extracted Watermark';
+                        resultSection.appendChild(heading);
+
+                        const img = document.createElement('img');
+                        img.src = data.extracted_url;
+                        img.alt = 'Extracted Watermark';
+                        resultSection.appendChild(img);
+
+                        const link = document.createElement('a');
+                        link.href = data.extracted_url;
+                        link.textContent = 'Download Extracted Watermark';
+                        link.download = true;
+                        resultSection.appendChild(link);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
